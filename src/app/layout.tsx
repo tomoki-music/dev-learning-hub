@@ -16,11 +16,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Music Event Hub",
-    template: "%s | Music Event Hub",
+    default: "Dev Learning Hub",
+    template: "%s | Dev Learning Hub",
   },
   description:
-    "音楽コミュニティ向けのイベント管理アプリ。イベントの一覧・検索・登録・編集ができます。",
+    "プログラミングを学びたい人のための学習プラットフォーム兼コミュニティ。学習コースを探し、オンライン・オフラインの学習イベントに参加して、仲間と一緒に継続できます。",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
