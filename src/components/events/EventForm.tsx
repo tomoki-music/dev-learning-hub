@@ -5,17 +5,23 @@ import { useRouter } from "next/navigation";
 import type { EventApiError, EventFormInput, EventRecord } from "@/types/event";
 import { validateEventForm } from "@/lib/validation";
 import { toDatetimeLocalValue } from "@/lib/events";
+import { EVENT_FORMATS, LEARNING_CATEGORIES, LEARNING_DIFFICULTIES, TECHNOLOGY_TAGS } from "@/types/learning";
 
 type EventFormProps =
   | { mode: "create" }
   | { mode: "edit"; event: EventRecord };
 
 const FIELD_LABELS: Record<keyof EventFormInput, string> = {
-  title: "イベント名",
-  description: "イベントの説明",
+  title: "学習イベント名",
+  description: "学習イベントの説明",
   date: "開催日時",
   location: "開催場所",
   capacity: "定員",
+  category: "学習カテゴリ",
+  difficulty: "難易度",
+  format: "開催形式",
+  organizer: "主催者名",
+  technologyTagNames: "技術タグ",
 };
 
 function initialValuesFor(props: EventFormProps): EventFormInput {
@@ -26,9 +32,25 @@ function initialValuesFor(props: EventFormProps): EventFormInput {
       date: toDatetimeLocalValue(props.event.date),
       location: props.event.location,
       capacity: String(props.event.capacity),
+      category: props.event.category,
+      difficulty: props.event.difficulty,
+      format: props.event.format,
+      organizer: props.event.organizer,
+      technologyTagNames: props.event.technologyTags.map((tag) => tag.name),
     };
   }
-  return { title: "", description: "", date: "", location: "", capacity: "" };
+  return {
+    title: "",
+    description: "",
+    date: "",
+    location: "",
+    capacity: "",
+    category: LEARNING_CATEGORIES[0],
+    difficulty: "初心者",
+    format: EVENT_FORMATS[0],
+    organizer: "",
+    technologyTagNames: [],
+  };
 }
 
 /**
@@ -49,6 +71,15 @@ export function EventForm(props: EventFormProps) {
 
   function updateField<K extends keyof EventFormInput>(key: K, value: EventFormInput[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function toggleTag(tag: string) {
+    setValues((prev) => ({
+      ...prev,
+      technologyTagNames: prev.technologyTagNames.includes(tag)
+        ? prev.technologyTagNames.filter((t) => t !== tag)
+        : [...prev.technologyTagNames, tag],
+    }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -186,6 +217,103 @@ export function EventForm(props: EventFormProps) {
         />
       </Field>
 
+      <Field label={FIELD_LABELS.organizer} htmlFor="organizer" error={fieldErrors.organizer}>
+        <input
+          id="organizer"
+          name="organizer"
+          type="text"
+          value={values.organizer}
+          onChange={(event) => updateField("organizer", event.target.value)}
+          aria-invalid={Boolean(fieldErrors.organizer)}
+          className={inputClass(Boolean(fieldErrors.organizer))}
+        />
+      </Field>
+
+      <div className="grid gap-6 sm:grid-cols-3">
+        <Field label={FIELD_LABELS.category} htmlFor="category" error={fieldErrors.category}>
+          <select
+            id="category"
+            name="category"
+            value={values.category}
+            onChange={(event) => updateField("category", event.target.value)}
+            aria-invalid={Boolean(fieldErrors.category)}
+            className={inputClass(Boolean(fieldErrors.category))}
+          >
+            {LEARNING_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label={FIELD_LABELS.difficulty} htmlFor="difficulty" error={fieldErrors.difficulty}>
+          <select
+            id="difficulty"
+            name="difficulty"
+            value={values.difficulty}
+            onChange={(event) => updateField("difficulty", event.target.value)}
+            aria-invalid={Boolean(fieldErrors.difficulty)}
+            className={inputClass(Boolean(fieldErrors.difficulty))}
+          >
+            {LEARNING_DIFFICULTIES.map((difficulty) => (
+              <option key={difficulty} value={difficulty}>
+                {difficulty}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label={FIELD_LABELS.format} htmlFor="format" error={fieldErrors.format}>
+          <select
+            id="format"
+            name="format"
+            value={values.format}
+            onChange={(event) => updateField("format", event.target.value)}
+            aria-invalid={Boolean(fieldErrors.format)}
+            className={inputClass(Boolean(fieldErrors.format))}
+          >
+            {EVENT_FORMATS.map((format) => (
+              <option key={format} value={format}>
+                {format}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+
+      <div>
+        <span className="block text-sm font-medium text-text-primary">
+          {FIELD_LABELS.technologyTagNames}
+        </span>
+        <div role="group" aria-label="技術タグ" className="mt-1.5 flex flex-wrap gap-1.5">
+          {TECHNOLOGY_TAGS.map((tag) => {
+            const isSelected = values.technologyTagNames.includes(tag);
+            return (
+              <button
+                key={tag}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => toggleTag(tag)}
+                className={
+                  "rounded-md px-2.5 py-1.5 font-mono text-xs font-medium transition-colors " +
+                  (isSelected
+                    ? "bg-brand-primary text-white"
+                    : "bg-surface text-text-muted hover:bg-brand-primary-soft")
+                }
+              >
+                {tag}
+              </button>
+            );
+          })}
+        </div>
+        {fieldErrors.technologyTagNames && (
+          <p role="alert" className="mt-1.5 text-sm text-danger">
+            {fieldErrors.technologyTagNames}
+          </p>
+        )}
+      </div>
+
       <div className="flex gap-3">
         <button
           type="submit"
@@ -195,7 +323,7 @@ export function EventForm(props: EventFormProps) {
           {isSubmitting
             ? "送信中…"
             : props.mode === "create"
-              ? "イベントを作成する"
+              ? "学習イベントを作成する"
               : "変更を保存する"}
         </button>
       </div>

@@ -13,7 +13,7 @@ export async function generateMetadata({
 }: EditEventPageProps): Promise<Metadata> {
   const { id } = await params;
   const event = await getEventById(id);
-  return { title: event ? `${event.title} を編集` : "イベントが見つかりません" };
+  return { title: event ? `${event.title} を編集` : "学習イベントが見つかりません" };
 }
 
 export default async function EditEventPage({ params }: EditEventPageProps) {
@@ -30,11 +30,11 @@ export default async function EditEventPage({ params }: EditEventPageProps) {
         href={`/events/${event.id}`}
         className="text-sm font-medium text-brand-primary hover:underline"
       >
-        ← イベント詳細へ戻る
+        ← 学習イベント詳細へ戻る
       </Link>
 
       <h1 className="mt-4 text-2xl font-semibold text-text-primary">
-        イベントを編集
+        学習イベントを編集
       </h1>
       <p className="mt-2 text-sm text-text-muted">「{event.title}」の内容を編集します。</p>
 

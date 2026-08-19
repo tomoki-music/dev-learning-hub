@@ -1,16 +1,50 @@
-import type { Event as PrismaEvent } from "@/generated/prisma/client";
-import type { EventRecord, EventStatus } from "@/types/event";
+import {
+  EVENT_FORMATS,
+  LEARNING_CATEGORIES,
+  LEARNING_DIFFICULTIES,
+  type EventFormat,
+  type EventRecord,
+  type EventStatus,
+  type EventWithTags,
+  type LearningCategory,
+  type LearningDifficulty,
+} from "@/types/event";
 
-/** Prisma's generated `Event.status` is typed as a plain `string` because
- * SQLite has no enum column type. This narrows it to `EventStatus` at the
- * boundary where data leaves the database layer, so every screen below
- * gets the safety of the union type instead of re-checking the string. */
-export function toEventRecord(event: PrismaEvent): EventRecord {
-  return { ...event, status: asEventStatus(event.status) };
+/** Prisma's generated `Event.status`/`category`/`difficulty`/`format` are
+ * typed as plain `string`s because SQLite has no enum column type. This
+ * narrows them to their union types at the boundary where data leaves the
+ * database layer, so every screen below gets the safety of the union type
+ * instead of re-checking the string. */
+export function toEventRecord(event: EventWithTags): EventRecord {
+  return {
+    ...event,
+    status: asEventStatus(event.status),
+    category: asLearningCategory(event.category),
+    difficulty: asLearningDifficulty(event.difficulty),
+    format: asEventFormat(event.format),
+  };
 }
 
 function asEventStatus(value: string): EventStatus {
   return value === "CLOSED" ? "CLOSED" : "RECRUITING";
+}
+
+function asLearningCategory(value: string): LearningCategory {
+  return (LEARNING_CATEGORIES as readonly string[]).includes(value)
+    ? (value as LearningCategory)
+    : "その他";
+}
+
+function asLearningDifficulty(value: string): LearningDifficulty {
+  return (LEARNING_DIFFICULTIES as readonly string[]).includes(value)
+    ? (value as LearningDifficulty)
+    : "レベル不問";
+}
+
+function asEventFormat(value: string): EventFormat {
+  return (EVENT_FORMATS as readonly string[]).includes(value)
+    ? (value as EventFormat)
+    : "オンライン";
 }
 
 /**

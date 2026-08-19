@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { toEventRecord } from "@/lib/events";
 import { toEventWriteData, validateEventForm } from "@/lib/validation";
+import { eventInclude } from "@/types/event";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -19,12 +20,15 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   const eventId = parseEventId(id);
   if (eventId === null) {
-    return NextResponse.json({ error: "イベントが見つかりません" }, { status: 404 });
+    return NextResponse.json({ error: "学習イベントが見つかりません" }, { status: 404 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: eventInclude,
+  });
   if (!event) {
-    return NextResponse.json({ error: "イベントが見つかりません" }, { status: 404 });
+    return NextResponse.json({ error: "学習イベントが見つかりません" }, { status: 404 });
   }
 
   return NextResponse.json({ event: toEventRecord(event) });
@@ -35,7 +39,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   const eventId = parseEventId(id);
   if (eventId === null) {
-    return NextResponse.json({ error: "イベントが見つかりません" }, { status: 404 });
+    return NextResponse.json({ error: "学習イベントが見つかりません" }, { status: 404 });
   }
 
   let body: unknown;
@@ -56,12 +60,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const updated = await prisma.event.update({
       where: { id: eventId },
-      data: toEventWriteData(result.data),
+      data: {
+        ...toEventWriteData(result.data),
+        // `set` (not `connect`) on update: replaces the event's full tag
+        // list with exactly the checked ones, so unchecking a tag in the
+        // edit form actually removes it instead of only ever adding more.
+        technologyTags: { set: result.data.technologyTagNames.map((name) => ({ name })) },
+      },
+      include: eventInclude,
     });
     return NextResponse.json({ event: toEventRecord(updated) });
   } catch (error) {
     if (isRecordNotFound(error)) {
-      return NextResponse.json({ error: "イベントが見つかりません" }, { status: 404 });
+      return NextResponse.json({ error: "学習イベントが見つかりません" }, { status: 404 });
     }
     throw error;
   }
@@ -72,7 +83,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
   const eventId = parseEventId(id);
   if (eventId === null) {
-    return NextResponse.json({ error: "イベントが見つかりません" }, { status: 404 });
+    return NextResponse.json({ error: "学習イベントが見つかりません" }, { status: 404 });
   }
 
   try {
@@ -80,7 +91,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ id: eventId });
   } catch (error) {
     if (isRecordNotFound(error)) {
-      return NextResponse.json({ error: "イベントが見つかりません" }, { status: 404 });
+      return NextResponse.json({ error: "学習イベントが見つかりません" }, { status: 404 });
     }
     throw error;
   }
