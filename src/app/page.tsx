@@ -1,69 +1,81 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+/**
+ * The top page needs no state, no fetch, no click handlers — a Server
+ * Component renders it to static-looking HTML with no client JS bundle.
+ * In Vue/Nuxt terms this is close to a page with no `<script setup>`
+ * logic at all, just a template.
+ */
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div>
+      <section className="border-b border-surface-border bg-brand-primary text-white">
+        <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 sm:py-28">
+          <p className="text-sm font-medium tracking-widest text-brand-gold uppercase">
+            Music Event Hub
           </p>
+          <h1 className="mt-4 max-w-2xl text-3xl leading-snug font-semibold sm:text-4xl">
+            音楽コミュニティのイベントを、
+            <br />
+            もっとシンプルに。
+          </h1>
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-white/80">
+            セッション、ライブ出演、ワークショップ、オフラインミートアップ。
+            音楽仲間と集まる機会を一箇所にまとめて、募集状況をひと目で確認できるイベント管理アプリです。
+          </p>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link
+              href="/events"
+              className="rounded-md bg-brand-gold px-6 py-3 text-sm font-semibold text-brand-primary-dark transition-colors hover:bg-brand-gold-dark hover:text-white"
+            >
+              イベント一覧を見る
+            </Link>
+            <Link
+              href="/events/new"
+              className="rounded-md border border-white/40 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            >
+              イベントを作成する
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+        <h2 className="text-xl font-semibold text-text-primary">
+          Music Event Hubでできること
+        </h2>
+        <div className="mt-8 grid gap-6 sm:grid-cols-3">
+          <FeatureCard
+            title="募集状況が一目瞭然"
+            description="定員と参加人数から募集中／受付終了を自動判定。カード一覧でイベントの状況がすぐに分かります。"
+          />
+          <FeatureCard
+            title="キーワードで検索"
+            description="イベント名や開催場所から絞り込み検索。開催中のイベントだけを表示することもできます。"
+          />
+          <FeatureCard
+            title="登録・編集がすぐできる"
+            description="必須項目チェックと定員の数値チェック付きのフォームで、誰でも迷わずイベントを作成・更新できます。"
+          />
         </div>
-      </main>
+      </section>
+    </div>
+  );
+}
+
+function FeatureCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-xl border border-surface-border bg-surface-card p-6 shadow-sm">
+      <h3 className="font-semibold text-text-primary">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-text-muted">
+        {description}
+      </p>
     </div>
   );
 }

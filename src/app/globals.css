@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
+/*
+ * Tailwind v4 defines the design system in CSS (`@theme`) instead of
+ * `tailwind.config.js`. Every `--color-*` token below becomes a utility
+ * class automatically — `--color-brand-gold` gives you `bg-brand-gold`,
+ * `text-brand-gold`, `border-brand-gold`, etc. There is no separate config
+ * file to keep in sync with the classes you actually use.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf9f6;
+  --foreground: #1f1b3a;
 }
 
 @theme inline {
@@ -10,17 +17,49 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Deep navy-purple ink: header, headings, primary buttons */
+  --color-brand-primary: #241b4e;
+  --color-brand-primary-dark: #171233;
+  --color-brand-primary-soft: #ece9f7;
+
+  /* Muted antique gold: accents, focus rings, dividers */
+  --color-brand-gold: #b3872e;
+  --color-brand-gold-dark: #8a691f;
+  --color-brand-gold-soft: #f3e6c4;
+
+  /* Neutral surfaces */
+  --color-surface: #faf9f6;
+  --color-surface-card: #ffffff;
+  --color-surface-border: #e5e1ee;
+
+  /* Text */
+  --color-text-primary: #1f1b3a;
+  --color-text-muted: #5b5770;
+
+  /* Status badges */
+  --color-status-open-bg: #e3f3ea;
+  --color-status-open-text: #276745;
+  --color-status-closed-bg: #efece4;
+  --color-status-closed-text: #6b6355;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/*
+ * This design intentionally does not follow prefers-color-scheme: the
+ * brief calls for one deliberate "white base + navy/purple + gold" look
+ * rather than a separate dark palette, so the tokens above apply
+ * regardless of the visitor's OS theme.
+ */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), "Hiragino Sans", "Yu Gothic", Arial, sans-serif;
+}
+
+/* Keep focus rings visible (accessibility) while matching the brand palette
+   instead of the browser's default blue outline. */
+:focus-visible {
+  outline: 2px solid var(--color-brand-gold);
+  outline-offset: 2px;
 }
