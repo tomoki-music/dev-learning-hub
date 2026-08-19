@@ -1,0 +1,31 @@
+// Prisma schema for music-event-hub
+// docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  // SQLite for local development. See README for the notes on migrating to
+  // PostgreSQL for production (the schema below avoids SQLite-only features
+  // such as enums so the move stays low-risk).
+  provider = "sqlite"
+}
+
+// Recruitment status is intentionally a String (not a Prisma enum) because
+// SQLite has no native enum type. `EventStatus` in src/types/event.ts is the
+// source of truth for the allowed values and is shared by client and server.
+model Event {
+  id               Int      @id @default(autoincrement())
+  title            String
+  description      String
+  date             DateTime
+  location         String
+  capacity         Int
+  participantCount Int      @default(0)
+  // "RECRUITING" | "CLOSED" — see src/types/event.ts
+  status           String   @default("RECRUITING")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
