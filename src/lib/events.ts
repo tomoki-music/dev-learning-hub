@@ -30,7 +30,7 @@ export function remainingSlots(event: EventRecord): number {
   return Math.max(event.capacity - event.participantCount, 0);
 }
 
-const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
+const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
   year: "numeric",
   month: "long",
   day: "numeric",
@@ -39,7 +39,20 @@ const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
   minute: "2-digit",
 });
 
+const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "short",
+});
+
+/** Full date + time, used on the event detail page ("開催日時"). */
 export function formatEventDate(date: Date): string {
+  return dateTimeFormatter.format(date);
+}
+
+/** Date only, used on event cards ("開催日") to keep the card compact. */
+export function formatEventDateShort(date: Date): string {
   return dateFormatter.format(date);
 }
 

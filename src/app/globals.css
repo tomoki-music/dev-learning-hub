@@ -42,6 +42,11 @@
   --color-status-open-text: #276745;
   --color-status-closed-bg: #efece4;
   --color-status-closed-text: #6b6355;
+
+  /* Form / API error messaging (kept separate from the neutral "受付終了"
+     badge tone above, which signals a normal state, not a problem) */
+  --color-danger: #b3261e;
+  --color-danger-bg: #fbeceb;
 }
 
 /*
