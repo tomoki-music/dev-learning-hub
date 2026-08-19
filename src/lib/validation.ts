@@ -1,5 +1,11 @@
 import { z } from "zod";
 import type { EventApiError, EventFormInput } from "@/types/event";
+import {
+  EVENT_FORMATS,
+  LEARNING_CATEGORIES,
+  LEARNING_DIFFICULTIES,
+  TECHNOLOGY_TAGS,
+} from "@/types/learning";
 
 /**
  * Single source of truth for "is this event input valid?".
@@ -14,13 +20,13 @@ export const eventFormSchema = z.object({
   title: z
     .string()
     .trim()
-    .min(1, "イベント名を入力してください")
-    .max(100, "イベント名は100文字以内で入力してください"),
+    .min(1, "学習イベント名を入力してください")
+    .max(100, "学習イベント名は100文字以内で入力してください"),
   description: z
     .string()
     .trim()
-    .min(1, "イベントの説明を入力してください")
-    .max(2000, "イベントの説明は2000文字以内で入力してください"),
+    .min(1, "学習イベントの説明を入力してください")
+    .max(2000, "学習イベントの説明は2000文字以内で入力してください"),
   date: z
     .string()
     .min(1, "開催日時を入力してください")
@@ -44,6 +50,17 @@ export const eventFormSchema = z.object({
     .refine((value) => Number(value) <= 100000, {
       message: "定員は100000名以下で入力してください",
     }),
+  category: z.enum(LEARNING_CATEGORIES, "学習カテゴリを選択してください"),
+  difficulty: z.enum(LEARNING_DIFFICULTIES, "難易度を選択してください"),
+  format: z.enum(EVENT_FORMATS, "開催形式を選択してください"),
+  organizer: z
+    .string()
+    .trim()
+    .min(1, "主催者名を入力してください")
+    .max(100, "主催者名は100文字以内で入力してください"),
+  technologyTagNames: z
+    .array(z.enum(TECHNOLOGY_TAGS))
+    .max(TECHNOLOGY_TAGS.length, "技術タグの指定が不正です"),
 });
 
 export type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -75,8 +92,11 @@ export function validateEventForm(input: unknown): EventValidationResult {
   };
 }
 
-/** Converts validated string-based form values into the types Prisma
- * expects (`date` -> Date, `capacity` -> number). */
+/** Converts validated string-based form values into the scalar fields
+ * Prisma expects (`date` -> Date, `capacity` -> number). The
+ * `technologyTags` relation is deliberately left out here — POST connects
+ * the tags, PUT replaces them wholesale with `set`, so each Route Handler
+ * builds that part of the write itself (see src/app/api/events). */
 export function toEventWriteData(values: EventFormValues) {
   return {
     title: values.title,
@@ -84,5 +104,9 @@ export function toEventWriteData(values: EventFormValues) {
     date: new Date(values.date),
     location: values.location,
     capacity: Number(values.capacity),
+    category: values.category,
+    difficulty: values.difficulty,
+    format: values.format,
+    organizer: values.organizer,
   };
 }

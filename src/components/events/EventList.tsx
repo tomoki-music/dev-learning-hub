@@ -1,5 +1,6 @@
 import type { EventRecord } from "@/types/event";
 import { EventCard } from "@/components/events/EventCard";
+import { EmptyState } from "@/components/common/EmptyState";
 
 export function EventList({
   events,
@@ -11,11 +12,7 @@ export function EventList({
   emptyMessage: string;
 }) {
   if (events.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-surface-border bg-surface-card px-6 py-16 text-center">
-        <p className="text-text-muted">{emptyMessage}</p>
-      </div>
-    );
+    return <EmptyState message={emptyMessage} />;
   }
 
   return (

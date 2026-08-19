@@ -4,23 +4,7 @@ import {
   remainingSlots,
   toDatetimeLocalValue,
 } from "@/lib/events";
-import type { EventRecord } from "@/types/event";
-
-function makeEvent(overrides: Partial<EventRecord> = {}): EventRecord {
-  return {
-    id: 1,
-    title: "テストイベント",
-    description: "説明",
-    date: new Date("2026-09-01T10:00:00.000Z"),
-    location: "会場",
-    capacity: 10,
-    participantCount: 0,
-    status: "RECRUITING",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    ...overrides,
-  };
-}
+import { makeEvent } from "@/lib/test-support/event-factory";
 
 describe("deriveEventStatus", () => {
   it("is RECRUITING when there is remaining capacity and no manual close", () => {

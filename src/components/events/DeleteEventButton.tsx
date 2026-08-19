@@ -22,7 +22,7 @@ export function DeleteEventButton({
 
   async function handleDelete() {
     const confirmed = window.confirm(
-      `「${eventTitle}」を削除します。この操作は取り消せません。よろしいですか？`,
+      `学習イベント「${eventTitle}」を削除します。この操作は取り消せません。よろしいですか？`,
     );
     if (!confirmed || isDeleting) return;
 

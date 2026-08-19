@@ -5,6 +5,8 @@ import { deriveEventStatus, formatEventDate, remainingSlots } from "@/lib/events
 import { getEventById } from "@/lib/event-queries";
 import { EventStatusBadge } from "@/components/events/EventStatusBadge";
 import { DeleteEventButton } from "@/components/events/DeleteEventButton";
+import { DifficultyBadge } from "@/components/common/DifficultyBadge";
+import { TagBadge } from "@/components/common/TagBadge";
 
 type EventDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -15,7 +17,10 @@ export async function generateMetadata({
 }: EventDetailPageProps): Promise<Metadata> {
   const { id } = await params;
   const event = await getEventById(id);
-  return { title: event ? event.title : "イベントが見つかりません" };
+  return {
+    title: event ? event.title : "学習イベントが見つかりません",
+    description: event ? event.description.slice(0, 120) : undefined,
+  };
 }
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
@@ -38,7 +43,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         href="/events"
         className="text-sm font-medium text-brand-primary hover:underline"
       >
-        ← イベント一覧へ戻る
+        ← 学習イベント一覧へ戻る
       </Link>
 
       <div className="mt-6 rounded-xl border border-surface-border bg-surface-card p-6 sm:p-8">
@@ -49,9 +54,23 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <EventStatusBadge status={status} />
         </div>
 
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <TagBadge tone="accent">{event.category}</TagBadge>
+          <DifficultyBadge difficulty={event.difficulty} />
+          <TagBadge>{event.format}</TagBadge>
+        </div>
+
         <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-text-muted">
           {event.description}
         </p>
+
+        {event.technologyTags.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {event.technologyTags.map((tag) => (
+              <TagBadge key={tag.id}>{tag.name}</TagBadge>
+            ))}
+          </div>
+        )}
 
         <dl className="mt-8 grid gap-x-6 gap-y-4 border-t border-surface-border pt-6 text-sm sm:grid-cols-2">
           <div>
@@ -67,6 +86,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             </dd>
           </div>
           <div>
+            <dt className="text-text-muted">主催者</dt>
+            <dd className="mt-1 font-medium text-text-primary">
+              {event.organizer}
+            </dd>
+          </div>
+          <div>
             <dt className="text-text-muted">定員</dt>
             <dd className="mt-1 font-medium text-text-primary">
               {event.capacity}名
@@ -77,7 +102,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             <dd className="mt-1 font-medium text-text-primary">
               {event.participantCount}名
               {status === "RECRUITING" && (
-                <span className="ml-1 text-brand-gold-dark">
+                <span className="ml-1 text-brand-accent-dark">
                   （残り{remaining}名）
                 </span>
               )}

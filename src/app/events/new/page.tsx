@@ -3,7 +3,8 @@ import Link from "next/link";
 import { EventForm } from "@/components/events/EventForm";
 
 export const metadata: Metadata = {
-  title: "イベントを作成",
+  title: "学習イベントを作成",
+  description: "もくもく会・ハンズオン・交流会などの学習イベントを登録します。",
 };
 
 /**
@@ -16,14 +17,14 @@ export default function NewEventPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
       <Link href="/events" className="text-sm font-medium text-brand-primary hover:underline">
-        ← イベント一覧へ戻る
+        ← 学習イベント一覧へ戻る
       </Link>
 
       <h1 className="mt-4 text-2xl font-semibold text-text-primary">
-        イベントを作成
+        学習イベントを作成
       </h1>
       <p className="mt-2 text-sm text-text-muted">
-        必要な情報を入力してイベントを登録してください。
+        必要な情報を入力して学習イベントを登録してください。
       </p>
 
       <div className="mt-8 rounded-xl border border-surface-border bg-surface-card p-6 sm:p-8">

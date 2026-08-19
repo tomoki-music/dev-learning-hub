@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { toEventRecord } from "@/lib/events";
-import type { EventRecord } from "@/types/event";
+import { eventInclude, type EventRecord } from "@/types/event";
 
 /**
  * Shared by the event detail page, its `generateMetadata`, and the edit
@@ -13,6 +13,9 @@ export async function getEventById(id: string): Promise<EventRecord | null> {
   const eventId = Number(id);
   if (!Number.isInteger(eventId) || eventId <= 0) return null;
 
-  const row = await prisma.event.findUnique({ where: { id: eventId } });
+  const row = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: eventInclude,
+  });
   return row ? toEventRecord(row) : null;
 }

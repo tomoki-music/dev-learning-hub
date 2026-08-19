@@ -1,4 +1,4 @@
-// Prisma schema for music-event-hub
+// Prisma schema for Dev Learning Hub
 // docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -13,9 +13,15 @@ datasource db {
   provider = "sqlite"
 }
 
-// Recruitment status is intentionally a String (not a Prisma enum) because
-// SQLite has no native enum type. `EventStatus` in src/types/event.ts is the
-// source of truth for the allowed values and is shared by client and server.
+// Recruitment status, category, difficulty, and format are intentionally
+// plain Strings (not Prisma enums) because SQLite has no native enum type.
+// `src/types/event.ts` and `src/types/learning.ts` are the source of truth
+// for the allowed values and are shared by client and server.
+//
+// This model is still named `Event` even though the app is now "Dev
+// Learning Hub" — it represents a study meetup/learning event, and renaming
+// it would touch every query, route, and generated type for no behavioral
+// benefit, so it stays as-is (see README's "今回のリファクタリング内容").
 model Event {
   id               Int      @id @default(autoincrement())
   title            String
@@ -26,6 +32,66 @@ model Event {
   participantCount Int      @default(0)
   // "RECRUITING" | "CLOSED" — see src/types/event.ts
   status           String   @default("RECRUITING")
+  // LearningCategory — see src/types/learning.ts
+  category         String   @default("その他")
+  // LearningDifficulty — see src/types/learning.ts
+  difficulty       String   @default("レベル不問")
+  // EventFormat ("オンライン" | "オフライン" | "ハイブリッド")
+  format           String   @default("オンライン")
+  organizer        String   @default("Dev Learning Hub 運営")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // Implicit many-to-many: Prisma manages the join table automatically
+  // (no extra model needed on either side). See README's "TechnologyTagの
+  // 多対多設計" for the trade-off against an explicit join model.
+  technologyTags TechnologyTag[]
+}
+
+// Curated, shared across all events — see TECHNOLOGY_TAGS in
+// src/types/learning.ts, which both the form and the seed draw from.
+model TechnologyTag {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  events Event[]
+}
+
+// A learning course, made up of ordered lessons. Read-only in this phase
+// (no enrollment/progress tracking yet — see README roadmap).
+model Course {
+  id             Int      @id @default(autoincrement())
+  title          String
+  slug           String   @unique
+  description    String
+  // LearningCategory — see src/types/learning.ts
+  category       String
+  // LearningDifficulty — see src/types/learning.ts
+  difficulty     String
+  estimatedHours Int
+  // CourseThumbnailTheme — a display color key, not an image; see
+  // src/types/learning.ts
+  thumbnailTheme String   @default("indigo")
+  isPublished    Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  lessons Lesson[]
+}
+
+model Lesson {
+  id               Int      @id @default(autoincrement())
+  courseId         Int
+  course           Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  // Display order within the course; unique per course so ordering is
+  // always well-defined (see `getCourseBySlug` in src/lib/course-queries.ts).
+  position         Int
+  estimatedMinutes Int
+  isPreview        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([courseId, position])
+  @@index([courseId])
 }
