@@ -243,7 +243,7 @@ Railsに近いと感じたのは、「モデル定義（`schema.prisma`）から
 
 ### 前提
 
-- Node.js **20.9以降**（`nvm install`で`.nvmrc`のNode 20.20.2を利用できます）
+- Node.js **24.19.0以降**（`nvm install`で`.nvmrc`のNode 24.19.0を利用できます）
 - npm
 
 ```bash
