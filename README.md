@@ -6,6 +6,21 @@
 
 > 個人開発の学習用ポートフォリオです。もともとは音楽コミュニティ向けのイベント管理アプリ「Music Event Hub」として実装したものを、既存のCRUD・Prisma・バリデーション・テスト資産を再利用しながら段階的にリブランディング／機能拡張しました（詳細は[今回のリファクタリング内容](#今回のリファクタリング内容)を参照）。
 
+## 公開URL
+
+- **Production**: <https://dev-learning-hub-two.vercel.app>
+
+Productionはポートフォリオ公開用の**閲覧専用環境**です。学習イベントの作成・編集・削除はできません（変更系APIはアクセスすると403を返します）。イベントの作成・編集・削除の動作確認は、Preview環境またはローカル環境で行っています。
+
+### デプロイ構成
+
+- **ホスティング**: [Vercel](https://vercel.com/)
+- **データベース**: Neon PostgreSQL（Vercel連携経由）
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **CI**: GitHub Actions
+- GitHubリポジトリとVercelを連携し、pushに応じてPreview／Production Deploymentが自動実行されます
+- Production／Preview／Developmentのデータベースはそれぞれ分離されており、Preview環境での変更がProductionへ影響することはありません
+
 ## 開発背景
 
 普段はプログラミング講師として、Vue.js・Ruby on Railsを中心に学習者の支援をしています。教材を使った個人学習のサポートを続ける中で、教材だけでは学習が長続きしない、あるいは一人で詰まったまま止まってしまう学習者を数多く見てきました。
