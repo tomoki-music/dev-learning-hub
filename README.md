@@ -52,8 +52,8 @@ Productionはポートフォリオ公開用の**閲覧専用環境**です。学
 | UIライブラリ | [React 19](https://react.dev/) |
 | 言語 | TypeScript 5（`strict` モード） |
 | スタイリング | [Tailwind CSS v4](https://tailwindcss.com/)（CSSベースの`@theme`設定） |
-| ORM | [Prisma 7](https://www.prisma.io/)（Driver Adapter方式） |
-| データベース | SQLite（`better-sqlite3` ドライバ経由） |
+| ORM | [Prisma 7.9.1](https://www.prisma.io/)（Driver Adapter方式） |
+| データベース | PostgreSQL（[Neon](https://neon.tech/)、Vercel連携経由） |
 | バリデーション | [Zod](https://zod.dev/)（クライアント・サーバー共有スキーマ） |
 | テスト | [Vitest](https://vitest.dev/) |
 | Lint | ESLint（`eslint-config-next`） |
@@ -115,7 +115,7 @@ Productionはポートフォリオ公開用の**閲覧専用環境**です。学
 
 ### Event（学習イベント）
 
-`status`・`category`・`difficulty`・`format`はSQLiteにネイティブenum型が無いため、あえてPrisma enumを使わず**文字列カラム＋TypeScript union定数**で管理しています（`src/types/event.ts` / `src/types/learning.ts`）。将来PostgreSQLへ移行する際も、この設計ならスキーマ変更なしでenum化を検討できます。
+`status`・`category`・`difficulty`・`format`は、もともとSQLite（ネイティブenum型なし）向けに**文字列カラム＋TypeScript union定数**で管理していた設計です（`src/types/event.ts` / `src/types/learning.ts`）。データソースはPostgreSQLへ移行済みですが、enum化しても挙動上のメリットがなく別途マイグレーションが必要になるだけのため、あえて文字列カラムのまま維持しています。
 
 | カラム | 型 | 備考 |
 |---|---|---|
@@ -136,7 +136,7 @@ Productionはポートフォリオ公開用の**閲覧専用環境**です。学
 
 - **採用した設計**: Prismaの**暗黙的多対多リレーション**（`Event.technologyTags TechnologyTag[]` / `TechnologyTag.events Event[]`）。Prismaが中間テーブル（`_EventToTechnologyTag`）を自動生成し、`connect`（作成時）／`set`（更新時、タグ一覧を丸ごと置き換え）だけで完結します。
 - **検討した代替案**: 中間テーブルを`EventTechnologyTag { eventId, tagId, @@id([eventId, tagId]) }`のように明示的なモデルとして定義する方法。付与日時などの追加カラムを将来持たせやすい利点はありますが、今回はその要件がなく、クエリ・フォーム側の実装が一段複雑になります。
-- **判断**: SQLiteは暗黙的多対多リレーション自体に制約はない（enumが使えないのとは別の話）ため、今回はシンプルさを優先して暗黙的多対多を採用しました。技術タグは`TECHNOLOGY_TAGS`という固定候補リスト（`src/types/learning.ts`）で管理し、フォームのチェックボックス・検索UIのフィルタチップ・シードデータで同じ配列を共有しています。
+- **判断**: 暗黙的多対多リレーション自体はデータベースの種類に依存せず利用できる（enumが使えないのとは別の話）ため、今回はシンプルさを優先して暗黙的多対多を採用しました。技術タグは`TECHNOLOGY_TAGS`という固定候補リスト（`src/types/learning.ts`）で管理し、フォームのチェックボックス・検索UIのフィルタチップ・シードデータで同じ配列を共有しています。
 
 ### Course（学習コース）/ Lesson（レッスン）
 
@@ -245,7 +245,7 @@ App Routerでは**すべてのコンポーネントがデフォルトでServer C
 | ルーティング定義 | `config/routes.rb`に集約 | `app/`配下のディレクトリ構造そのものがルート（`events/[id]/edit/page.tsx`など） |
 | コントローラ | `EventsController#index`などのアクション | Server Componentのページ自体がデータ取得＋表示を兼ねる。`app/api/`のRoute Handlersが「外部公開用API」相当 |
 | モデルのバリデーション | `ActiveModel::Validations`（`validates :capacity, numericality: ...`） | Zodスキーマ（`src/lib/validation.ts`）をクライアント・サーバーで共有。フォームとAPIの両方から同じスキーマを呼ぶ |
-| Enum | `enum status: { recruiting: 0, closed: 1 }` | SQLiteにenum型が無いため、文字列カラム＋TS unionで手動管理（`src/types/event.ts` / `learning.ts`） |
+| Enum | `enum status: { recruiting: 0, closed: 1 }` | Prisma enumは使わず、文字列カラム＋TS unionで手動管理（`src/types/event.ts` / `learning.ts`）。SQLite時代の設計をPostgreSQL移行後もそのまま維持 |
 | N対Nリレーション | `has_many :technology_tags, through: :event_technology_tags` | Prismaの暗黙的多対多（`TechnologyTag[]`同士の宣言のみ）。中間テーブルはPrismaが自動生成 |
 | ビュー | ERB / Haml + ヘルパーメソッド | JSX（TSX）+ Tailwindのユーティリティクラス |
 | 404処理 | `rescue_from ActiveRecord::RecordNotFound` | `notFound()`関数を呼ぶと最も近い`not-found.tsx`がレンダリングされる |
@@ -275,10 +275,10 @@ cp .env.example .env
 
 ### migration・seed手順
 
-SQLiteはファイルベースのDBなので、追加のミドルウェア起動は不要です。
+接続先はクラウド上のPostgreSQL（`.env`の`DATABASE_URL`/`DIRECT_URL`で指定）なので、ローカルでDBサーバーを別途起動する必要はありません。
 
 ```bash
-# マイグレーションを適用してDBファイル（prisma/dev.db）を作成・更新
+# マイグレーションを適用してテーブルを作成・更新
 npm run db:migrate
 
 # 学習イベント・学習コース・レッスン・技術タグのデモデータを投入
@@ -394,7 +394,7 @@ dev-learning-hub/
 │   │       ├── CourseSearch.tsx        # "use client"
 │   │       └── LessonList.tsx
 │   ├── lib/
-│   │   ├── prisma.ts             # PrismaClientシングルトン（+ SQLite driver adapter）
+│   │   ├── prisma.ts             # PrismaClientシングルトン（+ PostgreSQL driver adapter）
 │   │   ├── events.ts             # 募集状況の導出・日付フォーマット・行の型ナローイング
 │   │   ├── event-queries.ts      # id指定での学習イベント取得（詳細・編集ページ共通）
 │   │   ├── event-filters.ts      # 検索・絞り込みロジック（ページ・APIで共有）
@@ -419,15 +419,14 @@ dev-learning-hub/
 4. **コメント・チャット機能**— 学習会・コースへの質問やフィードバックのやり取り
 5. **管理者権限**— コース・レッスンの作成・編集・公開管理をUIから行えるようにする
 6. **決済機能**— 有料コースへの対応
-7. **DBレベルでの検索・絞り込み**— 現状は全件取得後にアプリケーション側でフィルタリング。データ量が増えた場合はSQLクエリ側での絞り込み・ページネーションに切り替える
-8. **PostgreSQLへの移行**— SQLite固有機能（enum非対応など）を避ける設計にしてあるため、`prisma/schema.prisma`の`datasource`と`@prisma/adapter-pg`への切り替えで移行できる想定
-9. **Vercel等へのデプロイ**— 現状はローカル開発のみ
-10. **E2Eテストの追加**— Playwright等を用いた、実際のブラウザ操作を伴う一連のシナリオテスト
+7. **DBレベルでの検索・絞り込み／ページネーション**— 現状は全件取得後にアプリケーション側でフィルタリング。データ量が増えた場合はSQLクエリ側での絞り込み・ページネーションに切り替える
+8. **E2Eテストの追加**— Playwright等を用いた、実際のブラウザ操作を伴う一連のシナリオテスト
+9. **独自ドメイン**— 現状はVercelの発行するドメイン（`dev-learning-hub-two.vercel.app`）を使用
 
 ## 技術的に工夫した点
 
 - **既存資産の再利用を優先したリファクタリング**: `Event`モデルを安易にリネーム・再作成せず、フィールド追加とクエリ・コンポーネントの拡張で対応しました。既存のバリデーション・API・テストの設計パターン（Zodスキーマの共有、Route Handlerの構造、`toEventRecord`によるナローイング）をそのまま踏襲し、学習コース機能にも同じパターン（`course-queries.ts`、`filterCourses`）を横展開しています。
-- **SQLiteとPostgreSQL移行を見据えたenum非依存設計**: `status`/`category`/`difficulty`/`format`をすべて文字列カラム＋TypeScript union定数で管理し、Prisma enumに依存しない設計を維持しました。
+- **enum非依存設計をPostgreSQL移行後も維持**: `status`/`category`/`difficulty`/`format`をすべて文字列カラム＋TypeScript union定数で管理し、Prisma enumに依存しない設計を維持しました（SQLite時代の設計をそのまま踏襲し、PostgreSQL移行後も変更していません）。
 - **多対多リレーションのトレードオフを明示した設計判断**: 技術タグは暗黙的多対多を採用し、明示的な中間テーブルモデルとの比較・判断根拠を[DB設計](#db設計)に明記しました。
 - **検索・絞り込みロジックの一本化**: `/events`ページと`GET /api/events`が同じ`filterEvents`（`src/lib/event-filters.ts`）を共有し、両者の絞り込み条件が乖離しないようにしています。
 - **Route Handlerの単体テスト**: 実サーバーを起動せず、Prismaをモックした状態でRoute Handler関数を直接呼び出すことで、正常系・400・404を高速に検証できるようにしました。
