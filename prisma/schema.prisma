@@ -7,16 +7,19 @@ generator client {
 }
 
 datasource db {
-  // SQLite for local development. See README for the notes on migrating to
-  // PostgreSQL for production (the schema below avoids SQLite-only features
-  // such as enums so the move stays low-risk).
-  provider = "sqlite"
+  // PostgreSQL (Prisma Postgres). Connection URLs are supplied via
+  // prisma.config.ts (CLI/migrations, DIRECT_URL) and the PrismaClient
+  // driver adapter (runtime, DATABASE_URL) — see src/lib/prisma.ts.
+  provider = "postgresql"
 }
 
 // Recruitment status, category, difficulty, and format are intentionally
-// plain Strings (not Prisma enums) because SQLite has no native enum type.
-// `src/types/event.ts` and `src/types/learning.ts` are the source of truth
-// for the allowed values and are shared by client and server.
+// plain Strings (not Prisma enums). This was originally a SQLite constraint
+// (no native enum type) and is kept as-is now that the datasource is
+// PostgreSQL, since switching to real enums would need its own migration
+// with no behavioral benefit. `src/types/event.ts` and `src/types/learning.ts`
+// are the source of truth for the allowed values and are shared by client
+// and server.
 //
 // This model is still named `Event` even though the app is now "Dev
 // Learning Hub" — it represents a study meetup/learning event, and renaming

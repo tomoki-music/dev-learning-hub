@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 type FakeTag = { id: number; name: string };
@@ -82,6 +82,15 @@ beforeEach(() => {
   nextId = 1;
   nextTagId = 1;
   tagsByName.clear();
+  // POST is a mutation, so it's gated by EVENT_MUTATIONS_ENABLED (see
+  // src/lib/mutation-permissions.ts) — most existing tests below exercise
+  // the create flow itself, so default it to enabled here and have the
+  // "disabled/unset" describe block below opt back out per test.
+  vi.stubEnv("EVENT_MUTATIONS_ENABLED", "true");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("GET /api/events", () => {
@@ -156,5 +165,42 @@ describe("POST /api/events", () => {
       }),
     );
     expect(response.status).toBe(400);
+  });
+});
+
+describe("POST /api/events — EVENT_MUTATIONS_ENABLED gate", () => {
+  it("returns 403 and creates nothing when explicitly disabled", async () => {
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", "false");
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/events", {
+        method: "POST",
+        body: JSON.stringify(validBody),
+      }),
+    );
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as { error: string };
+    expect(body.error).toBe("この環境ではイベントの変更はできません");
+    expect(events).toHaveLength(0);
+  });
+
+  it("returns 403 and creates nothing when unset", async () => {
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", undefined);
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/events", {
+        method: "POST",
+        body: JSON.stringify(validBody),
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(events).toHaveLength(0);
+  });
+
+  it("still returns 200 for GET when mutations are disabled", async () => {
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", "false");
+
+    const response = await GET(new NextRequest("http://localhost/api/events"));
+    expect(response.status).toBe(200);
   });
 });

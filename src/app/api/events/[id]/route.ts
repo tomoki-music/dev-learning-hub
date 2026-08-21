@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { toEventRecord } from "@/lib/events";
 import { toEventWriteData, validateEventForm } from "@/lib/validation";
+import { areEventMutationsEnabled, mutationsDisabledResponse } from "@/lib/mutation-permissions";
 import { eventInclude } from "@/types/event";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -36,6 +37,10 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
 /** `PUT /api/events/[id]` — full update of the editable fields. */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  if (!areEventMutationsEnabled()) {
+    return mutationsDisabledResponse();
+  }
+
   const { id } = await params;
   const eventId = parseEventId(id);
   if (eventId === null) {
@@ -80,6 +85,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 /** `DELETE /api/events/[id]` */
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+  if (!areEventMutationsEnabled()) {
+    return mutationsDisabledResponse();
+  }
+
   const { id } = await params;
   const eventId = parseEventId(id);
   if (eventId === null) {

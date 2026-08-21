@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { toEventRecord } from "@/lib/events";
 import { filterEvents } from "@/lib/event-filters";
 import { toEventWriteData, validateEventForm } from "@/lib/validation";
+import { areEventMutationsEnabled, mutationsDisabledResponse } from "@/lib/mutation-permissions";
 import { eventInclude } from "@/types/event";
 import type { EventFormat, EventStatus, LearningCategory, LearningDifficulty } from "@/types/event";
 import { EVENT_FORMATS, LEARNING_CATEGORIES, LEARNING_DIFFICULTIES } from "@/types/learning";
@@ -49,6 +50,10 @@ function asOneOf<T extends string>(value: string | null, allowed: readonly T[]):
  * called by anything, not only our own form.
  */
 export async function POST(request: NextRequest) {
+  if (!areEventMutationsEnabled()) {
+    return mutationsDisabledResponse();
+  }
+
   let body: unknown;
   try {
     body = await request.json();

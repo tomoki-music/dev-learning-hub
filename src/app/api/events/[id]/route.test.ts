@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 
@@ -130,6 +130,15 @@ beforeEach(() => {
   events = [];
   tagsByName.clear();
   nextTagId = 1;
+  // PUT/DELETE are mutations, so they're gated by EVENT_MUTATIONS_ENABLED
+  // (see src/lib/mutation-permissions.ts) — most existing tests below
+  // exercise the update/delete flow itself, so default it to enabled here
+  // and have the "disabled/unset" describe block below opt back out.
+  vi.stubEnv("EVENT_MUTATIONS_ENABLED", "true");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe("GET /api/events/[id]", () => {
@@ -198,5 +207,58 @@ describe("DELETE /api/events/[id]", () => {
   it("returns 404 when the event does not exist", async () => {
     const response = await DELETE(new NextRequest("http://localhost/api/events/999", { method: "DELETE" }), paramsFor("999"));
     expect(response.status).toBe(404);
+  });
+});
+
+describe("EVENT_MUTATIONS_ENABLED gate", () => {
+  it("PUT returns 403 and leaves the event unchanged when explicitly disabled", async () => {
+    seedEvent({ id: 1 });
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", "false");
+
+    const response = await PUT(
+      new NextRequest("http://localhost/api/events/1", { method: "PUT", body: JSON.stringify(validBody) }),
+      paramsFor("1"),
+    );
+    expect(response.status).toBe(403);
+    const body = (await response.json()) as { error: string };
+    expect(body.error).toBe("この環境ではイベントの変更はできません");
+    expect(events[0].title).not.toBe(validBody.title);
+  });
+
+  it("PUT returns 403 when unset", async () => {
+    seedEvent({ id: 1 });
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", undefined);
+
+    const response = await PUT(
+      new NextRequest("http://localhost/api/events/1", { method: "PUT", body: JSON.stringify(validBody) }),
+      paramsFor("1"),
+    );
+    expect(response.status).toBe(403);
+  });
+
+  it("DELETE returns 403 and keeps the event when explicitly disabled", async () => {
+    seedEvent({ id: 1 });
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", "false");
+
+    const response = await DELETE(new NextRequest("http://localhost/api/events/1", { method: "DELETE" }), paramsFor("1"));
+    expect(response.status).toBe(403);
+    expect(events).toHaveLength(1);
+  });
+
+  it("DELETE returns 403 when unset", async () => {
+    seedEvent({ id: 1 });
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", undefined);
+
+    const response = await DELETE(new NextRequest("http://localhost/api/events/1", { method: "DELETE" }), paramsFor("1"));
+    expect(response.status).toBe(403);
+    expect(events).toHaveLength(1);
+  });
+
+  it("GET still returns 200 when mutations are disabled", async () => {
+    seedEvent({ id: 1 });
+    vi.stubEnv("EVENT_MUTATIONS_ENABLED", "false");
+
+    const response = await GET(new NextRequest("http://localhost/api/events/1"), paramsFor("1"));
+    expect(response.status).toBe(200);
   });
 });

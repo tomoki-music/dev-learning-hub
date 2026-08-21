@@ -1,11 +1,21 @@
 // Development seed data. Run with `npm run db:seed` (wraps `prisma db seed`,
 // which since Prisma v7 is never run automatically — see prisma.config.ts).
 import { PrismaClient } from "../src/generated/prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { TECHNOLOGY_TAGS } from "../src/types/learning";
 
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL ?? "file:./prisma/dev.db",
+// Only check *that* the variable is set, never log its value.
+if (!process.env.DIRECT_URL) {
+  throw new Error("DIRECT_URL is not set");
+}
+
+// Seeding connects directly via the driver adapter + DIRECT_URL (a plain
+// TCP connection string), not DATABASE_URL/Accelerate like the app's
+// PrismaClient in src/lib/prisma.ts. Seeding is a one-off CLI operation
+// (`npm run db:seed`), same as `prisma migrate`, so it uses the same direct
+// connection those commands use rather than going through Accelerate.
+const adapter = new PrismaPg({
+  connectionString: process.env.DIRECT_URL,
 });
 const prisma = new PrismaClient({ adapter });
 

@@ -13,7 +13,11 @@ export default defineConfig({
     // so `npx prisma db seed` (or `npm run db:seed`) must be run explicitly.
     seed: "tsx prisma/seed.ts",
   },
+  // CLI/migration commands use the *direct* (non-pooled) connection so a
+  // migration's session isn't interrupted by the connection pooler — see
+  // README's PostgreSQL section. The app itself connects via DATABASE_URL
+  // (pooled) through the driver adapter in src/lib/prisma.ts.
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DIRECT_URL"],
   },
 });

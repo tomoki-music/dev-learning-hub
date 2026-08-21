@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEventById } from "@/lib/event-queries";
 import { EventForm } from "@/components/events/EventForm";
+import { areEventMutationsEnabled } from "@/lib/mutation-permissions";
 
 type EditEventPageProps = {
   params: Promise<{ id: string }>;
@@ -17,6 +18,15 @@ export async function generateMetadata({
 }
 
 export default async function EditEventPage({ params }: EditEventPageProps) {
+  // Read-only environments (Production, until real admin auth exists)
+  // have no edit flow at all — not even by typing the URL directly. The
+  // Route Handler enforces the same rule independently (see
+  // `src/lib/mutation-permissions.ts`), so this is defense in depth, not
+  // the only guard.
+  if (!areEventMutationsEnabled()) {
+    notFound();
+  }
+
   const { id } = await params;
   const event = await getEventById(id);
 
