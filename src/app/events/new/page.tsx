@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { EventForm } from "@/components/events/EventForm";
+import { areEventMutationsEnabled } from "@/lib/mutation-permissions";
 
 export const metadata: Metadata = {
   title: "学習イベントを作成",
@@ -14,6 +16,15 @@ export const metadata: Metadata = {
  * need the browser", not "is this a form vs. a page".
  */
 export default function NewEventPage() {
+  // Read-only environments (Production, until real admin auth exists)
+  // have no create flow at all — not even by typing the URL directly.
+  // The Route Handler enforces the same rule independently (see
+  // `src/lib/mutation-permissions.ts`), so this is defense in depth, not
+  // the only guard.
+  if (!areEventMutationsEnabled()) {
+    notFound();
+  }
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
       <Link href="/events" className="text-sm font-medium text-brand-primary hover:underline">
